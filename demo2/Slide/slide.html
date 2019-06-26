@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>reveal.js – The HTML Presentation Framework</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Hakim El Hattab">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+                <section data-markdown>
+                    <textarea data-template>
+                    # 介接 JSON 心歷路程
+                    #### 林煒峻 / yume190
+                    </textarea>
+                </section>
+
+                <section data-markdown>
+                    <textarea data-template>
+                     * JSONShoot
+                     * `func decode<T>(type: T.Type) -> T`
+                     * `func generic<T>() -> T`
+                     * final version decode
+                     * 整合 Net request
+                     * Q & A
+                    </textarea>
+                </section>
+
+                <section data-markdown>
+                    <textarea data-template>
+                    ## JSONShootout
+
+                    ![](https://raw.githubusercontent.com/bwhiteley/JSONShootout/master/images/performance.png)
+                    </textarea>
+                </section>
+
+                <section>
+                    <section data-markdown>
+                        <textarea data-template>
+                        ```
+                        let jsonString = """
+                        {
+                            "a" : "123"
+                        }
+                        """
+                        
+                        // ["a":"123"]
+                        let dictionary = try! JSONSerialization
+                            .jsonObject(
+                                with: jsonString.data(using: .utf8)!, 
+                                options: []
+                            ) as! NSDictionary
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ```
+                        public func firstVersionDecode<T>(
+                            type: T.Type,
+                            dictionary: NSDictionary?,
+                            key: String) -> T? {
+                            return dictionary?[key] as? T
+                        }
+
+                        let firstVersionA = firstVersionDecode(
+                            type: String.self,
+                            dictionary: dictionary,
+                            key: "a"
+                        )
+                        ```
+                        </textarea>
+                    </section>
+                </section>
+
+                <section>
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## generic
+                
+                        ```
+                        func generic<T>() -> T? {
+                            return 1 as? T
+                        }
+                        
+                        let aInt:Int? = generic()
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## generic
+                
+                        ```
+                        protocol StringInit {
+                            init?(_ str:String)
+                        }
+                        
+                        extension Int: StringInit {}
+                        extension Double: StringInit {}
+                        extension UInt: StringInit {}
+                        
+                        func decode<T: StringInit>(str: String) -> T? {
+                            return T(str)
+                        }
+                        
+                        let a: Int? = decode(str: "1")
+                        let b: Double? = decode(str: "3.3")
+                        let c: UInt? = decode(str: "10")
+                        ```
+                        </textarea>
+                    </section>
+                </section>
+
+                <section>
+                    <section data-markdown>
+                        <textarea data-template>
+                        ```
+                        func nextVersionDecode<T: StringInit>(
+                            dictionary: NSDictionary?, 
+                            key: String) -> T? {
+                            guard let value = dictionary?[key] as? String else {
+                                return nil
+                            }
+                            
+                            return T(value)
+                        }
+
+                        let nextVersionA: Int? = nextVersionDecode(
+                            dictionary: dictionary,
+                            key: "a"
+                        )
+                        ```
+                        </textarea>
+                    </section>
+                </section>
+
+                <section>
+                    <section data-markdown>
+                        <textarea data-template>
+                        ```
+                        import JSONDecodeKit
+                        struct Response: JSONDecodable {
+                            let code: Int
+                            let message: String
+                            static func decode(json: JSON) throws -> Response {
+                                return try Response(
+                                    code: json <| "code",
+                                    message: json <| "message"
+                                )
+                            }
+                        }
+                        ```
+                        </textarea>
+                    </section>
+                </section>
+
+                <section>
+                    <section data-markdown>
+                        <textarea data-template>
+                        ```
+                        struct Entry {
+                            static let base = "http://127.0.0.1:3000"
+                            
+                            public static let alamofire:SessionManager = {
+                                let configuration = URLSessionConfiguration.default
+                                configuration.timeoutIntervalForRequest = 15 // seconds
+                                configuration.timeoutIntervalForResource = 15
+                                configuration.urlCache = nil
+                                let alamofire = Alamofire.SessionManager(
+                                    configuration: configuration
+                                )
+                                return alamofire
+                            }()
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ```
+                        extension Entry {
+                            struct BaseDatas: Entryable {
+                                typealias ResponseType = [Response]
+                                
+                                let key: String
+                                
+                                let base: String = Entry.base
+                                var path: String { return "/yume" }
+                                let sessionManager: Alamofire.SessionManager = 
+                                    Entry.alamofire
+                                let method: Alamofire.HTTPMethod = .get
+                                let parameters: Parameters = [:]
+                                let isJSONRequest: Bool = false
+                                let headers: Headers = [:]
+                            }
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ```
+                        extension Entry.BaseDatas {
+                            struct Response: Codable {
+                                let code: Int
+                                let message: String
+                            }
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ``` swift
+                        extension Entryable where ResponseType: Codable {
+                            public func req(
+                                failureHandler: ((Alamofire.DefaultDataResponse) -> Void)? = nil, 
+                                successHandler: ((ResponseType) -> Void)?) {
+                                // ...
+                            }
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ``` swift
+                        Entry.BaseDatas(key: "").req { (res) in
+                            print(res)
+                        }
+                        ```
+                        </textarea>
+                    </section>
+                </section>
+
+				<section data-markdown>
+                    <textarea data-template>
+                    ## Q & A
+                    </textarea>
+                </section>
+
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/search/search.js', async: true },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>

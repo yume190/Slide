@@ -1,0 +1,11 @@
+module ELF {
+  //header "/usr/local/include/libelf/elf_repl.h"
+  //header "/usr/local/include/libelf/gelf.h"
+  header "/usr/local/include/libelf/libelf.h"
+  //header "/usr/local/include/libelf/nlist.h"
+  //header "/usr/local/include/libelf/sys_elf.h"
+  link "elf"
+  export *
+}
+
+//[system]

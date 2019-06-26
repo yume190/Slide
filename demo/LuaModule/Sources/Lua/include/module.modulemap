@@ -1,0 +1,4 @@
+module Lua {
+  umbrella header "umbrella.h"
+  export *
+}

@@ -1,0 +1,7 @@
+module Yume {
+  header "yume.h"
+  link "yume"
+  export *
+}
+
+//[system]

@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>reveal.js – The HTML Presentation Framework</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Hakim El Hattab">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+                <section data-markdown>
+                    <textarea data-template>
+                    # 如何在 swift 介接 c code
+                    ## ~~已知用 C~~
+                    </textarea>
+                </section>
+
+                <section data-markdown>
+                    <textarea data-template>
+                     * 林煒峻 / yume190
+                    </textarea>
+                </section>
+
+				<section>
+					<section data-markdown>
+						<textarea data-template>
+						## hello.swift
+				
+						```
+						func hello() {
+							print("hello Yume")
+						}
+						hello()
+						```
+						</textarea>
+					</section>
+
+					<section data-markdown>
+                        <textarea data-template>
+                        ## script 化 ([Shebang](https://zh.wikipedia.org/wiki/Shebang))
+
+                        ```
+                        #!/usr/bin/env xcrun swift
+                        ```
+
+                        ```
+                        chmod +x hello.swift
+                        ./hello.swift
+                        > hello Yume
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## 直接 compile 執行
+                        ```
+                        swiftc hello.swift -o hello
+                        ./hello
+                        > hello Yume
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## Swift Flags
+
+                        helloFlag.swift
+                        ``` 
+                        #if RELEASE
+                        print("Hello, release")
+                        #elseif DEBUG
+                        print("Hello, debug")
+                        #else
+                        print("Hello, none")
+                        #endif
+                        ```
+
+                        ```
+                        swiftc helloFlag.swift -o helloFlag && ./helloFlag
+                        >Hello, none
+                        swiftc helloFlag.swift -DRELEASE -o helloFlag && ./helloFlag
+                        >Hello, release
+                        swiftc helloFlag.swift -DDEBUG -o helloFlag && ./helloFlag
+                        >Hello, debug
+                        ```
+                        </textarea>
+                    </section>
+                </section>
+
+                <section>
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## Symbol
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        看看 swift symbol
+                        ```
+                        nm hello | grep hello
+                        0000000100001490 t __T05helloAAyyF
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        symbol demangle 過後
+                        ```
+                        nm hello | grep hello | swift-demangle
+                        0000000100001490 t _hello.hello() -> ()
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        再看看 c 的 symbol
+
+                        cHello1.c
+                        ```
+                        void hello1(void){}
+                        ```
+
+                        cHello2.c
+                        ```
+                        void hello1(void);
+                        void hello2(void) {
+                            hello1();
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        再看看 c 的 symbol
+
+                        ```
+                        make cHello1.o
+                        nm cHello1.o
+                        0000000000000000 T _hello1
+                        ```
+
+                        ```
+                        make cHello2.o 
+                        nm cHello2.o
+                                         U _hello1
+                        0000000000000000 T _hello2
+                        ```
+                        
+                        ```
+                        ld -r cHello1.o cHello.o -o c.o
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        來看看 SIL
+                        ```
+                        swiftc hello.swift -emit-silgen | \
+                            grep "sil hidden" | \
+                            grep hello
+                        sil hidden @_T05helloAAyyF : $@convention(thin) () -> () {
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        @_silgen_name
+                        ```
+                        @_silgen_name("hello1") 
+                        func hello1() { 
+                            print("hello1")
+                        }
+                        ```
+                        @_cdecl
+                        ```
+                        @_cdecl("hello2") 
+                        func hello2() { 
+                            print("hello2")
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        再看看 SIL & Symbol
+                        ```
+                        swiftc hello.swift -o hello
+                        nm hello | grep hello
+                        0000000100001480 t __T05hello6hello2yyF
+                        0000000100001310 t __T05helloAAyyF
+                        00000001000013c0 t _hello1
+                        0000000100001470 t _hello2
+                        ```
+
+                        ```
+                        swiftc hello.swift -emit-silgen | grep "sil hidden" | grep hello
+                        sil hidden @_T05helloAAyyF : $@convention(thin) () -> () {
+                        sil hidden @hello1 : $@convention(thin) () -> () {
+                        sil hidden [thunk] @hello2 : $@convention(c) () -> () {
+                        sil hidden @_T05hello6hello2yyF : $@convention(thin) () -> () {
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## swift call c (Part 1)
+
+                        c_hello.c
+                        ```
+                        #include <stdlib.h>
+                        #include <stdio.h>
+                        
+                        void hello_world() {
+                            printf("C say Hello World Ya!\n");
+                        }                                        
+                        ```
+
+                        swift_main.swift
+                        ```
+                        @_silgen_name("hello_world") func helloWorld()
+
+                        helloWorld()
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## swift call c (Part 2)
+
+                        ```
+                        llvm-gcc -c c_hello.c -o c_hello.o
+                        swiftc c_hello.o swift_main.swift -o swift_main
+                        ./swift_main             
+                        >C say Hello World Ya!              
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## c call swift (Part 1)
+
+                        c_main.c
+                        ```
+                        #include <stdlib.h>
+                        #include <stdio.h>
+                        int swift_add(int,int);
+
+                        int main() {
+                            int a = 100;
+                            int b = 2;
+                            printf("a + b = %d\n",swift_add(a,b));
+                            return 0;
+                        }                               
+                        ```
+
+                        swift_add.swift
+                        ```
+                        @_silgen_name("swift_add") 
+                        public func swift_add(a:Int,b:Int) -> Int {
+                            return a+b+100
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## c call swift (Part 2)
+
+                        ```
+                        swiftc -emit-library -parse-as-library swift_add.swift -o swift_add.o
+                        llvm-gcc swift_add.o c_main.c -o c_main
+                        ./c_main
+                        >a + b = 202
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## Demo
+                        </textarea>
+                    </section>
+                </section>
+                    
+                <section>
+                    <section data-markdown>
+						<textarea data-template>
+                        ## 透過 clang module
+
+                        yume.h
+                        ```
+                        int add(int a, int b);
+                        ```
+
+                        yume.c
+                        ```
+                        int add(int a, int b) {
+                            return a + b;
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## 透過 clang module
+
+                        module.modulemap
+                        ```
+                        module Yume {
+                            header "yume.h"
+                            link "yume" 
+                            export *
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## 產生 libyume.dylib
+
+                        linux 要產出 `.so`
+
+                        mac 要產出 `.dylib`
+
+                        ```
+                        llvm-gcc yume.c -dynamiclib -o libyume.dylib
+                        llvm-gcc yume.c -fPIC -shared -o libyume.so
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## 再看一下專案結構
+
+                        ```
+                        ls 
+                        > Yume
+                        ```
+                        ```
+                        tree Yume
+                        Yume
+                        ├── libyume.dylib
+                        ├── libyume.so
+                        ├── module.modulemap
+                        ├── yume.c
+                        └── yume.h
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## 實際執行看看
+
+                        ```
+                        swift -I Yume -L./Yume
+                        > import Yume
+                        > Yume.add
+                        $R0: (Int32, Int32) -> Int32 = 0x00000001000ffc80 $__lldb_expr4`@nonobjc __C.add(Swift.Int32, Swift.Int32) -> Swift.Int32 at repl3-c499e7..swift
+                        > Yume.add(1,2)
+                        $R1: Int32 = 3
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## Demo
+                        </textarea>
+                    </section>
+                </section>
+                
+                <section data-markdown>
+                    <textarea data-template>
+                    ## 碎碎念 & swift code 技巧分享
+                    </textarea>
+                </section>
+
+                <section>
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## ABI Stability
+                        [swift-evolution](https://github.com/apple/swift-evolution#development-major-version--swift-50)
+                        >Development major version: Swift 5.0
+                        >>Expected release date: Late 2018
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## ABI Stability
+                        [译：Swift ABI (一)](https://boxueio.com/black-board/1)
+
+                        [Swift ABI Stability Manifesto](https://github.com/apple/swift/blob/master/docs/ABIStabilityManifesto.md)
+
+                        [ABI Dashboard](https://swift.org/abi-stability/#data-layout)
+                        </textarea>
+                    </section>
+                </section>
+
+                <section data-markdown>
+                    <textarea data-template>
+                    ## JSONShootout
+
+                    ![](https://raw.githubusercontent.com/bwhiteley/JSONShootout/master/images/performance.png)
+                    </textarea>
+                </section>
+
+                <section>
+                    <section data-markdown>
+						<textarea data-template>
+						## Style
+				
+						```
+let label:UILabel = {
+    let label = UILabel()
+    label.text = "123"
+    // ...
+    return label
+}()
+						```
+						</textarea>
+                    </section>
+                    
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## lazy 其實很好用
+                
+                        ```
+                        class Example {
+                            lazy var a: Int = 1
+                            lazy var b: Int = self.setupB()
+                            lazy var c: Int = {
+                                let c: Int = 3
+                                return c
+                            }()
+                            
+                            func setupB() -> Int {
+                                return 2
+                            }
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## Protocol + Extension
+                
+                        ```
+                        public protocol ReusableExtension:class {}
+                        extension UITableViewCell:ReusableExtension {}
+
+                        extension ReusableExtension where Self:UITableViewCell {
+                            public static var identifier:String { 
+                                return String(describing: self) 
+                            }
+                            public static var bundle:Bundle { 
+                                return Bundle(for: Self.classForCoder()) 
+                            }
+                            public static var nib:UINib { 
+                                return UINib(nibName: identifier, bundle: bundle) 
+                            }
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## Protocol + Extension
+
+                        ```
+                        extension ReusableExtension where Self:UITableViewCell {
+                            public static func registerNibTo(tableView:UITableView?) {
+                                tableView?.register(
+                                    nib, 
+                                    forCellReuseIdentifier: identifier
+                                )
+                            }
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## typealias
+                
+                        ```
+                        class XXController: UIViewController {
+                            typealias Cell = XXCell
+                            override func viewDidLoad() {
+                                Cell.registerNibTo(tableView: tableView)
+                            }
+                        }
+
+                        extension XXController: UITableViewDataSource {
+                            func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+                                let cell = tableView.dequeueReusableCell(withIdentifier: Cell.identifier, for: indexPath)
+                                if let _cell = cell as? Cell { /*...*/ }
+                                return cell
+                            }
+                        }
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## generic
+                
+                        ```
+                        func generic<T>() -> T? {
+                            return 1 as? T
+                        }
+                        
+                        let aInt:Int? = generic()
+                        ```
+                        </textarea>
+                    </section>
+
+                    <section data-markdown>
+                        <textarea data-template>
+                        ## generic
+                
+                        ```
+                        protocol StringInit {
+                            init?(_ str:String)
+                        }
+                        
+                        extension Int:StringInit {}
+                        extension Double:StringInit {}
+                        extension UInt:StringInit {}
+                        
+                        func decode<T:StringInit>(str:String) -> T? {
+                            return T(str)
+                        }
+                        
+                        let a: Int? = decode(str: "1")
+                        let b: Double? = decode(str: "3.3")
+                        let c: UInt? = decode(str: "10")
+                        ```
+                        </textarea>
+                    </section>
+                </section>
+
+				<section data-markdown>
+                    <textarea data-template>
+                    ## Q & A
+                    </textarea>
+                </section>
+
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/search/search.js', async: true },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
